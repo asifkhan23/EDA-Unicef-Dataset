@@ -1,0 +1,635 @@
+---
+title: "IE6600: Computaton and Data Visualisation"
+subtitle: "Hackathon"
+author: "Team - 5: Asif, Kirti, Rahul "
+output:
+  html_document:
+    theme: lumen
+    toc: true
+    toc_depth: 3
+    smooth_scroll: true
+    highlight: tango  # specifies the syntax highlighting style
+always_allow_html: yes
+include:
+header-includes:
+ \usepackage{framed, xcolor, float, fancyhdr, placeins, lastpage, amsmath}
+ \pagestyle{fancy}
+ \fancyhead[L]{Hackathon}
+ \fancyhead[R]{IE6600$:$ Computaton and Data Visualisation}
+ \cfoot{\thepage\ of \pageref{LastPage}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\pagenumbering{gobble}
+```{r UNICEF LOGO, echo=FALSE, fig.align='center', out.width='40%', fig.pos='H'}
+knitr::include_graphics("https://i.pinimg.com/originals/50/ba/9f/50ba9f98aaf8f8ded4d576a6969668f0.jpg")
+```
+\vspace{.5in}
+
+```{r Set Current Directory, echo=FALSE, warning=FALSE}
+# Set the R environment to your current directory
+#setwd("put_your_working_directory_having_required_dataset")
+```
+
+```{r Loading Libraries, echo=FALSE, warning=FALSE, message=FALSE}
+# Libraries
+library(readxl)
+library(tidyverse)
+library(lubridate)
+library(ggalluvial)
+library(magrittr)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(ggalluvial)
+library(plotly)
+library(treemapify)
+library(maps)
+library(viridis)
+library(gridExtra)
+library(gtable)
+library(grid)
+library(plotly)
+```
+
+# Introduction
+
+UNICEF works in over 190 countries and territories to save children’s lives, to defend their rights, and to help them fulfill their potential, from early childhood through adolescence. And we never give up.   
+
+UNICEF firmly believes that consistent, credible data about children’s situations are critical to the improvement of their lives – and indispensable to realizing the rights of every child.  
+
+We got the opportunity to work on UNICEF data that includes domains (child protection, health, education, etc.) in which UNICEF is working towards achieving their mission.
+
+Taking the idea from UNICEF's mission statement, we are trying to visualize the five goals of UNCIEF which they are committed towards achieving.  
+
+Five Goals of UNICEF:  
+1. **Every child** has an Equitable chance in life - 1 in 4 births of the global population of children under 5 have never been registered    
+2. **Every child** is protected from violence and exploitation - More than 2 in 3 children are subjected to violent discipline by caregivers  
+3. **Every child** learns - More than 175 million children do not have access to Pre-Primary education  
+4. **Every child** lives in a clean and safe environment - 3 billion people do not have handwashing facility with water and soap at home  
+5. **Every child** survives and thrives - 5.2 million children under the age of 5 died in 2019    
+
+For visualizing these goals we have selected **The Least Developed Countries** as we believe it is more important to understand the impact of UNICEF in these nations.  
+
+```{r Adding Datasets, echo=FALSE, warning=FALSE}
+# Reading dataset
+list_of_sheets <- lapply(1:14, function(i) read_excel("Hackathon_Unicef_Dataset.xlsx", sheet = i))
+data_df <- do.call(rbind.data.frame, list_of_sheets[1])
+adolescents_df <- do.call(rbind.data.frame, list_of_sheets[2])
+basic_indicators_2_df <- do.call(rbind.data.frame, list_of_sheets[3])
+child_protection_df <- do.call(rbind.data.frame, list_of_sheets[4])
+demographic_df <- do.call(rbind.data.frame, list_of_sheets[5])
+disparaties_by_residence_df <- do.call(rbind.data.frame, list_of_sheets[6])
+disparaties_by_wealth_df <- do.call(rbind.data.frame, list_of_sheets[7])
+childhood_development_df <- do.call(rbind.data.frame, list_of_sheets[8])
+economic_df <- do.call(rbind.data.frame, list_of_sheets[9])
+education_df <- do.call(rbind.data.frame, list_of_sheets[10])
+health_df <- do.call(rbind.data.frame, list_of_sheets[11])
+hiv_aids_df <- do.call(rbind.data.frame, list_of_sheets[12])
+women_df <- do.call(rbind.data.frame, list_of_sheets[13])
+nutrition_df <- do.call(rbind.data.frame, list_of_sheets[14])
+
+leastDevelopedCountries <- c("Afghanistan","Angola","Bangladesh","Benin","Bhutan","Burkina Faso","Burundi","Cambodia","Central African Republic","Chad","Comoros","Democratic Republic of the Congo","Djibouti","Eritrea","Ethiopia","Gambia","Guinea","Guinea-Bissau","Haiti","Kiribati","Lao Peoples Democratic Republic","Lesotho","Liberia","Madagascar","Malawi","Mali","Mauritania","Mozambique","Myanmar","Nepal","Niger","Rwanda","Sao Tome and Principe","Senegal","Sierra Leone","Solomon Islands","Somalia","South Sudan","Sudan","Timor-Leste","Togo","Tuvalu","Uganda","United Republic of Tanzania","Yemen","Zambia")
+```
+
+# Equitable chance in life: Literacy Rate
+
+Youth is the building block of a nation whose literacy rate defines the development of a nation. The visualization below explains the comparison of Literacy Rate among Males and Females who belong to 15-24 years of age group.   
+```{r Literacy Rate Plot, echo=FALSE, warning=FALSE, fig.width = 9, fig.align="center"}
+literacyRate <- education_df %>% 
+  select(`Countries and areas`, `indicator 1`, `data 1`) %>% 
+  filter(`indicator 1` == "Youth (15–24 years) literacy rate (%), male" |
+          `indicator 1` == "Youth (15–24 years) literacy rate (%), female") %>% 
+  drop_na()
+
+literacyRate[-c(1,2)] <- lapply(
+  literacyRate[-c(1,2)], 
+  function(x)as.numeric(gsub("-", 0, x))
+)
+
+literacyRate <- literacyRate %>% drop_na()
+
+literacyRate <-
+  literacyRate[literacyRate$`Countries and areas` %in% leastDevelopedCountries,]
+
+literacyRate$`data 1` <- as.double(format(round(as.double(literacyRate$`data 1`), 2)))
+
+literacyRatePlot <- ggplot(literacyRate, aes(x = `Countries and areas`, y =`data 1`, fill = `indicator 1`)) +
+  geom_bar(stat="identity") +
+  geom_text(aes(label = paste0(`data 1`,"%")), position = position_stack(vjust = .5), size = 2) +
+  theme_minimal(base_size = 8) +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1)) +
+  scale_y_continuous(labels = function(x) paste0(x/2, "%")) +
+  labs(x = "Underdeveloped Countries and Areas", 
+       y = "Literacy Rate", 
+       title = "Literacy Rate of Males vs Female as per Countries",
+       fill = "Literacy Rate (Male vs Female)") +
+  coord_flip()
+
+ggplotly(literacyRatePlot)
+```
+
+The conclusion we can derive from the visual above is that most of the youth in these countries have literacy rate around 75% and have been given a equitable chance in terms of literacy for both male and female. However, there are still few countries like Afghanistan, Central African Republic, Chad, Niger, and South Sudan that are still lacking in providing to their youth.  
+
+# Learns: Attendance
+
+The school is described as a second home for students. Students achieve their basic training of education and life from their school. The visual is depicting the transition (in %) of students from Primary school to Lower Secondary School for both male and female.  
+```{r Attendance Pyramid Plot,echo=FALSE, warning=FALSE, fig.width= 12, fig.align="center"}
+attendanceAsPerPrimarySchooltypeMale <- education_df %>% 
+  select(`Countries and areas`, `data 1`, `indicator 1`) %>% 
+  filter(`indicator 1` == "Primary school participation - Net attendance ratio (%), male" & `data 1` != "–") %>%
+  drop_na()
+
+attendanceAsPerLowerSecondarySchooltypeMale <- education_df %>% 
+  select(`Countries and areas`, `data 1`, `indicator 1`) %>% 
+  filter(`indicator 1` == "Lower secondary school participation - Net attendance ratio (%), male" & `data 1` != "–") %>%
+  drop_na()
+
+attendanceAsPerSchooltypeMale <- inner_join(attendanceAsPerPrimarySchooltypeMale, attendanceAsPerLowerSecondarySchooltypeMale, by = "Countries and areas")
+
+attendanceAsPerSchooltypeMaleIndicator <- attendanceAsPerSchooltypeMale %>% 
+  select(`Countries and areas`, `indicator 1.x`, `indicator 1.y`) %>% 
+  pivot_longer(cols = -1, names_to = "indicator", values_to = "indicatorValue")
+
+attendanceAsPerSchooltypeMaleValue <- attendanceAsPerSchooltypeMale %>% 
+  select(`Countries and areas`, `data 1.x`, `data 1.y`) %>% 
+  pivot_longer(cols = -1, names_to = "data", values_to = "value")
+
+attendanceAsPerSchooltypeMale <- inner_join(attendanceAsPerSchooltypeMaleValue, attendanceAsPerSchooltypeMaleIndicator, by = "Countries and areas")
+
+attendanceAsPerSchooltypeMale <- attendanceAsPerSchooltypeMale %>% 
+  group_by(`Countries and areas`) %>% 
+  filter((data == "data 1.y" & indicator == "indicator 1.y") | (data == "data 1.x" & indicator == "indicator 1.x")) %>% 
+  select(`Countries and areas`, indicatorValue, value)
+
+attendanceAsPerSchooltypeMale <-
+  attendanceAsPerSchooltypeMale[attendanceAsPerSchooltypeMale$`Countries and areas` %in% leastDevelopedCountries,]
+
+attendanceAsPerSchooltypeMale <- attendanceAsPerSchooltypeMale %>% 
+  pivot_wider(names_from =`indicatorValue`, values_from = `value`) %>% 
+  rename(
+    `Primary school` = `Primary school participation - Net attendance ratio (%), male`,
+    `Lower Secondary school` = `Lower secondary school participation - Net attendance ratio (%), male`
+    ) %>% 
+  pivot_longer(cols = c(2,3), names_to = "indicatorValue", values_to = "value")
+
+attendanceAsPerPrimarySchooltypeFemale <- education_df %>% 
+  select(`Countries and areas`, `data 1`, `indicator 1`) %>% 
+  filter(`indicator 1` == "Primary school participation - Net attendance ratio (%), female" & `data 1` != "–") %>%
+  drop_na()
+
+attendanceAsPerLowerSecondarySchooltypeFemale <- education_df %>% 
+  select(`Countries and areas`, `data 1`, `indicator 1`) %>% 
+  filter(`indicator 1` == "Lower secondary school participation - Net attendance ratio (%), female" & `data 1` != "–") %>%
+  drop_na()
+
+attendanceAsPerSchooltypeFemale <- inner_join(attendanceAsPerPrimarySchooltypeFemale, attendanceAsPerLowerSecondarySchooltypeFemale, by = "Countries and areas")
+
+attendanceAsPerSchooltypeFemaleIndicator <- attendanceAsPerSchooltypeFemale %>% 
+  select(`Countries and areas`, `indicator 1.x`, `indicator 1.y`) %>% 
+  pivot_longer(cols = -1, names_to = "indicator", values_to = "indicatorValue")
+
+attendanceAsPerSchooltypeFemaleValue <- attendanceAsPerSchooltypeFemale %>% 
+  select(`Countries and areas`, `data 1.x`, `data 1.y`) %>% 
+  pivot_longer(cols = -1, names_to = "data", values_to = "value")
+
+attendanceAsPerSchooltypeFemale <- inner_join(attendanceAsPerSchooltypeFemaleValue, attendanceAsPerSchooltypeFemaleIndicator, by = "Countries and areas")
+
+attendanceAsPerSchooltypeFemale <- attendanceAsPerSchooltypeFemale %>% 
+  group_by(`Countries and areas`) %>% 
+  filter((data == "data 1.y" & indicator == "indicator 1.y") | (data == "data 1.x" & indicator == "indicator 1.x")) %>% 
+  select(`Countries and areas`, indicatorValue, value)
+
+attendanceAsPerSchooltypeFemale <-
+  attendanceAsPerSchooltypeFemale[attendanceAsPerSchooltypeFemale$`Countries and areas` %in% leastDevelopedCountries,]
+
+theme <- theme(panel.grid.minor = element_blank(),
+         panel.grid.major = element_blank(), 
+         axis.text.y = element_blank(), 
+         axis.title.y = element_blank(),
+         plot.title = element_text(size = 10, hjust = 0.5)) 
+
+femalePlot <- ggplot(attendanceAsPerSchooltypeFemale, aes(x = `Countries and areas`, y =as.double(value), fill = indicatorValue)) +
+  geom_bar(stat="identity", position = position_dodge2(reverse = TRUE)) +
+  scale_y_continuous(labels = function(x) paste0(x, "%"), trans = 'reverse') +
+  labs(x = "Underdeveloped Countries and Areas", 
+       y = "Percentage", 
+       title = "Net attendance Ratio: Females",
+       fill = "School Type") +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  coord_flip() + 
+  theme +
+  theme(plot.margin= unit(c(1, 0, 0, 0), "lines"))
+
+malePlot <- ggplot(attendanceAsPerSchooltypeMale, aes(x = `Countries and areas`, y =as.double(value), fill = indicatorValue)) +
+  geom_bar(stat="identity", position = position_dodge2(reverse = TRUE)) +
+  scale_y_continuous(labels = function(x) paste0(x, "%")) +
+  labs(x = "Underdeveloped Countries and Areas", 
+       y = "Percentage", 
+       title = "Net attendance Ratio: Males",
+       fill = "School Type") +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  coord_flip() + 
+  theme +
+  theme(plot.margin= unit(c(1, 0, 0, 0), "lines"))
+
+malePlot <- malePlot + 
+  theme(legend.title = element_text(size = 8), 
+        legend.text = element_text(size = 8)) +
+  guides(color = guide_legend(override.aes = list(size = 8)))
+
+# pyramid plot 
+gtM <- ggplotGrob(malePlot)
+leg <- gtM$grobs[[which(gtM$layout$name == "guide-box")]]
+legPos <- gtM$layout$l[grepl("guide", gtM$layout$name)]  # legend's position
+gtM <- gtM[, -c(legPos-1,legPos)] 
+gtF <- ggplotGrob(femalePlot)
+gtF = gtF[, -c(legPos-1,legPos)]
+rn <- which(gtF$layout$name == "axis-l")
+# Extract the axis (tick marks and axis text)
+axis.grob <- gtF$grobs[[rn]]
+axisl <- axis.grob$children[[2]]  # Two children - get the second
+# axisl  # Note: two grobs -  text and tick marks
+# Get the tick marks - NOTE: tick marks are second
+yaxis = axisl$grobs[[2]] 
+yaxis$x = yaxis$x - unit(1, "npc") + unit(2.75, "pt") # Reverse them
+# Add them to the right side of the panel
+# Add a column to the gtable
+panelPos = gtF$layout[grepl("panel", gtF$layout$name), c('t','l')]
+gtF <- gtable_add_cols(gtF, gtF$widths[3], panelPos$l)
+# Add the grob
+gtF <-  gtable_add_grob(gtF, yaxis, t = panelPos$t, l = panelPos$l+1)
+# Remove original left axis
+gtF = gtF[, -c(2,3)] 
+#### 3. country labels - create a plot using geom_text - to appear down the middle
+fontsize = 3
+ggC <- ggplot(attendanceAsPerSchooltypeMale, aes(x=`Countries and areas`)) +
+   geom_bar(stat = "identity", aes(y = 0)) +
+   geom_text(aes(y = 0,  label = `Countries and areas`), size = 2) +
+   ggtitle("Country") +
+   coord_flip() + theme_bw() + theme +
+   theme(panel.border = element_rect(colour = NA)) + theme_minimal()
+# get ggplot grob
+gtC <- ggplotGrob(ggC)
+# Get the title
+Title = gtC$grobs[[which(gtC$layout$name == "title")]]
+# Get the plot panel
+gtC = gtC$grobs[[which(gtC$layout$name == "panel")]]
+#### Arrange the components
+## First, combine "female" and "male" plots
+gt = cbind(gtF, gtM, size = "first")
+## Second, add the labels (gtC) down the middle
+# add column to gtable
+maxlab = attendanceAsPerSchooltypeMale$`Countries and areas`[which(str_length(attendanceAsPerSchooltypeMale$`Countries and areas`) == max(str_length(attendanceAsPerSchooltypeMale$`Countries and areas`)))]
+gt = gtable_add_cols(gt, sum(unit(1, "grobwidth", textGrob(maxlab, gp = gpar(fontsize = fontsize*72.27/25.4))), unit(5, "mm")), 
+           pos = length(gtF$widths))
+# add the grob
+gt = gtable_add_grob(gt, gtC, t = panelPos$t, l = length(gtF$widths) + 1)
+# add the title; ie the label 'country' 
+titlePos = gtF$layout$l[which(gtF$layout$name == "title")]
+gt = gtable_add_grob(gt, Title, t = titlePos, l = length(gtF$widths) + 1)
+## Third, add the legend to the right
+gt = gtable_add_cols(gt, sum(leg$width), -1)
+gt = gtable_add_grob(gt, leg, t = panelPos$t, l = length(gt$widths))
+#gt <- ggtitle("Countries and Areas School Enrollment")
+# draw the plot
+grid.newpage()
+grid.draw(gt)
+```
+
+The transition from the Primary to Lower Secondary can be visually seen for both male and female. It can be easily concluded that the percentage of students attending Primary schools are not attending Lower Secondary schools. Hence, there is a lot of effort needed by UNICEF in order to make their goal of every child learns successful.   
+
+# Survive and Thrives
+
+### HIV AIDS
+
+HIV/AIDS, is considered by some authors a global pandemic. However, the WHO currently uses the term 'global epidemic' to describe HIV. As of 2018, approximately 37.9 million people are infected with HIV globally. We are visualizing the number of cases of HIV across the globe for understanding how countries have been affected by this global epidemic. 
+```{r HIV World Map, echo=FALSE, warning=FALSE, fig.width= 12, fig.align="center"}
+world_map <- map_data("world")
+hivAllAges <- hiv_aids_df %>% 
+  select(`Countries and areas`,indicator,value) %>% 
+  filter(indicator == "Epidemiology - People living with HIV, All ages") %>% 
+  drop_na()
+hivAllAges[-c(1,2)] <- lapply(
+  hivAllAges[-c(1,2)], 
+  function(x)as.numeric(gsub("-", 0, x))
+)
+hivAllAges <- hivAllAges %>% drop_na()
+colnames(hivAllAges)[1] <- "region"
+hivAllAges <- left_join(hivAllAges, world_map, by = "region")
+probabilities <- c(0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00)
+quantileHIV <- quantile(hivAllAges$value, probs = probabilities)
+firstValHIV <- quantileHIV[1]
+secondValHIV <- quantileHIV[2]
+thirdValHIV <- quantileHIV[3]
+fourthValHIV <- quantileHIV[4]
+fifthValHIV <- quantileHIV[5]
+sixthValHIV <- quantileHIV[6]
+seventhValHIV <- quantileHIV[7]
+eighthValHIV <- quantileHIV[8]
+ninthValHIV <- quantileHIV[9]
+tenthValHIV <- quantileHIV[10]
+eleventhValHIV <- quantileHIV[11]
+twelvethValHIV <- quantileHIV[12]
+thirteenthValHIV <- quantileHIV[13]
+fourteenthValHIV <- quantileHIV[14]
+fifteenthValHIV <- quantileHIV[15]
+sixteenthValHIV <- quantileHIV[16]
+seventeenthValHIV <- quantileHIV[17]
+eigthteenthValHIV <- quantileHIV[18]
+ninteenthValHIV <- quantileHIV[19]
+twentithValHIV <- quantileHIV[20]
+hivAllAges <- hivAllAges %>% 
+  mutate(
+    `cases (in thousands)` = case_when(
+      value >= firstValHIV & value <= secondValHIV ~ 1,
+      value >= secondValHIV & value <= thirdValHIV ~ 2,
+      value >= thirdValHIV & value <= fourthValHIV ~ 3,
+      value >= fourthValHIV & value <= fifthValHIV ~ 4,
+      value >= fifthValHIV & value <= sixthValHIV ~ 5,
+      value >= sixthValHIV & value <= seventhValHIV ~ 6,
+      value >= seventhValHIV & value <= eighthValHIV ~ 7,
+      value >= eighthValHIV & value <= ninthValHIV ~ 8,
+      value >= ninthValHIV & value <= tenthValHIV ~ 9,
+      value >= tenthValHIV & value <= eleventhValHIV ~ 10,
+      value >= eleventhValHIV & value <= twelvethValHIV ~ 11,
+      value >= twelvethValHIV & value <= thirteenthValHIV ~ 12,
+      value >= thirteenthValHIV & value <= fourteenthValHIV ~ 13,
+      value >= fourteenthValHIV & value <= fifteenthValHIV ~ 14,
+      value >= fifteenthValHIV & value <= sixteenthValHIV ~ 15,
+      value >= sixteenthValHIV & value <= seventeenthValHIV ~ 16,
+      value >= seventeenthValHIV & value <= eigthteenthValHIV ~ 17,
+      value >= eigthteenthValHIV & value <= ninteenthValHIV ~ 18,
+      value >= ninteenthValHIV & value <= twentithValHIV ~ 19
+    )
+  )
+
+mapHIVPlot <- ggplot(hivAllAges, aes(long, lat, group = group)) +
+  geom_polygon(aes(fill = `cases (in thousands)`), color = "white") +
+  scale_fill_distiller(palette = "RdYlGn", direction = -1) +
+  theme_minimal()
+  
+ggplotly(mapHIVPlot)
+```
+
+The map depicts there are still many countries that are dealing with this global epidemic and that too in huge numbers. There is a need for creating more awareness around HIV and its effects among these countries to eradicate this deadly disease.  
+
+### Nutrition
+
+The physical benefits of proper nutrition are endless: it gives children the energy to live life to the full, protects against malnourishment, maintains the immune system, prevents obesity and reduces the risk of chronic disease. We are trying to visualize different kinds of nourishment indicators as per countries. 
+```{r Nutrition Indicators Plot ,echo=FALSE, warning=FALSE, fig.width=9, fig.align="center"}
+notNutrientsIndicator <- c("Low birthweight (%)", "Stunting (%), moderate & severe", "Overweight (%), moderate & severe", "Wasting (%), moderate & severe", "Wasting (%), Severe")
+
+# define a negative function
+`%!in%` = Negate(`%in%`)
+
+nutritionIndicators <- nutrition_df %>% 
+  select(`Countries and areas`, indicator, value)
+
+nutritionIndicators <- nutritionIndicators[nutritionIndicators$indicator %!in% notNutrientsIndicator,]
+
+nutritionIndicators[-c(1,2)] <- lapply(
+  nutritionIndicators[-c(1,2)], 
+  function(x)as.numeric(gsub("-", 0, x))
+)
+
+nutritionIndicators <-
+  nutritionIndicators[nutritionIndicators$`Countries and areas` %in% leastDevelopedCountries,]
+nutritionIndicators <- nutritionIndicators %>% 
+  pivot_wider(names_from = indicator, values_from = value) %>% 
+  drop_na() %>% 
+  pivot_longer(cols = c(2:8), names_to = "indicator", values_to = "value")
+
+nutritionIndicators$value <- as.double(format(round(as.double(nutritionIndicators$`value`), 2)))
+
+# HeatMap
+nutritionIndicatorsPlot <- ggplot(nutritionIndicators, aes(y =`Countries and areas` , x = indicator, fill = value)) +
+  geom_tile() +
+  scale_fill_distiller(palette = "RdYlGn") +
+  theme_minimal(base_size = 8) +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))
+
+ggplotly(nutritionIndicatorsPlot)
+```
+
+Heatmap depicts the correlation between the factors responsible for having adequate nutrition for infants with respect to each country. As we can see from the heatmap that Minimum acceptable diet (6-23 months) is below 50% for all the countries and hence resulting in nutrition deficiency. However, countries like Burkina Faso, Nepal, Rwanda are providing a better nutrition to children. 
+
+### Infant Mortality Rate 
+
+The infant mortality rate is an important marker of the overall health of a society. In 2018, the infant mortality rate in the United States was 5.7 deaths per 1,000 live births. We are depicting the chnage in infant mortality rate over the years from 1990 to 2016.    
+```{r Mortality Rate By Year Plot, echo=FALSE, warning=FALSE, fig.align="center"}
+mortalityRateByYear <- data_df %>% 
+  select(`Countries and areas`, Indicator, Value, Year) %>% 
+  filter(Indicator == "Infant mortality rate (under 1)")
+
+mortalityRateByYear$indicator <- paste(mortalityRateByYear$Indicator,
+                                       as.numeric(mortalityRateByYear$Year),
+                                       sep = ", ")
+
+mortalityRateByYear[-c(1,2,4,5)] <- lapply(
+  mortalityRateByYear[-c(1,2,4,5)], 
+  function(x)as.numeric(gsub("-", 0, x))
+)
+
+mortalityRateByYear <- mortalityRateByYear %>% 
+  select(`Countries and areas`, indicator, Value) %>% 
+  drop_na()
+
+mortalityRateByYear <-
+  mortalityRateByYear[mortalityRateByYear$`Countries and areas` %in% leastDevelopedCountries,]
+
+mortalityRateByYear$Value <- as.double(format(round(as.double(mortalityRateByYear$Value), 2)))
+
+
+empty_bar <- 0
+to_add <- data.frame( matrix(NA, empty_bar*nlevels(mortalityRateByYear$indicator), ncol(mortalityRateByYear)) )
+colnames(to_add) <- colnames(mortalityRateByYear)
+to_add$indicator <- rep(levels(mortalityRateByYear$indicator), each=empty_bar)
+mortalityRateByYear <- rbind(mortalityRateByYear, to_add)
+mortalityRateByYear <- mortalityRateByYear %>% arrange(indicator)
+mortalityRateByYear$id <- seq(1, nrow(mortalityRateByYear))
+
+label_data <- mortalityRateByYear
+number_of_bar <- nrow(label_data)
+angle <- 90 - 360 * (label_data$id-0.5) /number_of_bar     # I substract 0.5 because the letter must have the angle of the center of the bars. Not extreme right(1) or extreme left (0)
+label_data$hjust <- ifelse( angle < -90, 1, 0)
+label_data$angle <- ifelse(angle < -90, angle+180, angle)
+ 
+base_data <- mortalityRateByYear %>% 
+  group_by(indicator) %>% 
+  summarize(start=min(id), end=max(id) - empty_bar) %>% 
+  rowwise() %>% 
+  mutate(title=mean(c(start, end)))
+ 
+# prepare a data frame for grid (scales)
+grid_data <- base_data
+grid_data$end <- grid_data$end[ c( nrow(grid_data), 1:nrow(grid_data)-1)] + 1
+grid_data$start <- grid_data$start - 1
+grid_data <- grid_data[-1,]
+ 
+# Make the plot
+circularPlot <- ggplot(mortalityRateByYear, aes(x=as.factor(id), y=Value, fill=indicator)) +       # Note that id is a factor. If x is numeric, there is some space between the first bar
+  
+  geom_bar(aes(x=as.factor(id), y=Value, fill=indicator), stat="identity", alpha=0.5) +
+  
+  # Add a val=100/75/50/25 lines. I do it at the beginning to make sur barplots are OVER it.
+  geom_segment(data=grid_data, aes(x = end, y = 80, xend = start, yend = 80), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
+  geom_segment(data=grid_data, aes(x = end, y = 60, xend = start, yend = 60), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
+  
+  # Add text showing the value of each 100/75/50/25 lines
+  annotate("text", x = rep(max(mortalityRateByYear$id),2), y = c(60, 80), label = c("60", "80") , color="grey", size=3 , angle=0, fontface="bold", hjust=1) +
+  
+  geom_bar(aes(x=as.factor(id), y=Value, fill=indicator), stat="identity", alpha=0.5) +
+  ylim(-200,240) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    panel.grid = element_blank(),
+    plot.margin = unit(rep(-1,4), "cm") 
+  ) +
+  coord_polar() + 
+  geom_text(data=label_data, aes(x=id, y=Value+10, label=`Countries and areas`, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= label_data$angle, inherit.aes = FALSE ) +
+  
+  # Add base line information
+  geom_segment(data=base_data, aes(x = start, y = -5, xend = end, yend = -5), colour = "black", alpha=0.8, size=0.6 , inherit.aes = FALSE )  +
+  geom_text(data=base_data, aes(x = title, y = -18, label=indicator), hjust=c(0.5,0.5), vjust=c(-3.5,3.5), colour = "black", alpha=0.8, size=1.7, fontface="bold", inherit.aes = FALSE, angle = 90)
+
+circularPlot
+```
+
+As it is clearly visible form the circular barplot that infant mortality rate (in %) has decreased from 1960 to 2016 for each country. We can say that UNICEF has impacted in a positive way in reducing the infant mortality rate. 
+
+# Clean and Safe Environment: Clean Drinking Water and Sanitation 
+
+A safe and healthy environment not only protects children from injury and illness, it can also lower injuries & illness, and increase quality of living. In other words, clean and safe environment is good for having a healthy life. 
+Through a bubble chart, we are depicting life expectancy of children in countries by relating them to having basic sanitation and clean drinking water.   
+
+```{r Health And Demographic Plot, echo=FALSE, warning=FALSE, fig.width=10, fig.align="center"}
+waterAndSantiation <- health_df %>% 
+  select(`Countries and areas`, value, indicator) %>% 
+  filter(indicator == "Use of basic drinking water services (%), total" |
+           indicator == "Use of basic sanitation services (%), total") %>% 
+  pivot_wider(names_from = indicator, values_from = value)
+
+lifeExp <- demographic_df %>% 
+  select(`Countries and areas`, data, indicator, year) %>% 
+  filter(indicator == "Life expectancy," & year == "2016.0" ) %>% 
+  pivot_wider(names_from = indicator, values_from = data) %>% 
+  select(`Countries and areas`, `Life expectancy,`)
+
+healthAndDemographic <- inner_join(waterAndSantiation, lifeExp, by = "Countries and areas") 
+healthAndDemographic[-(1)] <- lapply(
+  healthAndDemographic[-(1)], 
+  function(x)as.numeric(gsub("-", 0, x))
+)
+healthAndDemographic <- healthAndDemographic %>% drop_na()
+healthAndDemographic <-
+  healthAndDemographic[healthAndDemographic$`Countries and areas` %in% leastDevelopedCountries,]
+
+healthAndDemographicPlot <- ggplot(healthAndDemographic, aes(x=`Use of basic sanitation services (%), total`, y=`Use of basic drinking water services (%), total`, size = `Life expectancy,`, color = `Countries and areas`)) +
+    geom_point(alpha=0.7) +
+  scale_size(range = c(.1, 10), name="Life Expectancy") +
+  theme_minimal() + 
+  theme(legend.title = element_text(size = 8), 
+        legend.text = element_text(size = 5)) + 
+  guides(color = guide_legend(override.aes = list(size = 5))) +
+  ggtitle("Life Expectancy in Underdeveloped Countries") 
+
+ggplotly(healthAndDemographicPlot)
+```
+
+Looking at the size of each bubble (life expectancy in %) in bubble chart presented, we can see that Bhutan has the best life expectancy among all countries because if sanitation and drinking conditions are good a nation will be healthy and have a better life expectancy.
+
+# Protection form Violence: Use of Mass Media vs Justification of Wife Beating among Adolescents
+
+Media play an important role in increasing of public awareness and collect the views, information and attitudes toward certain issue. Media is the most powerful tool of communication in emerging world and increased the awareness and presents the real stage of society. 
+Using the Sankey Chart we are depicting the impact of mass media towards creating awareness among female adolescents against violence. 
+
+```{r Mass Media Vs Wife Beating Plot, echo=FALSE, warning=FALSE, fig.width = 10, fig.align="center"}
+massMediaVsWifeBeating <- adolescents_df %>% 
+  select(`Countries and areas`, indicator, value) %>% 
+  group_by(`Countries and areas`) %>% 
+  filter(indicator == "Use of mass media among adolescents (%), male" | 
+           indicator == "Justification of wife-beating among adolescents (%), male" | 
+  indicator =="Use of mass media among adolescents (%), female" | 
+  indicator =="Justification of wife-beating among adolescents (%), female") %>% 
+  pivot_wider(names_from = indicator, values_from = value) %>% 
+  drop_na()
+
+massMediaVsWifeBeating[-(1)] <- lapply(
+  massMediaVsWifeBeating[-(1)], 
+  function(x)as.numeric(gsub("-", 0, x))
+)
+
+massMediaVsWifeBeating <- massMediaVsWifeBeating %>% drop_na()
+
+meanOfMassMediaForWomen <- mean(massMediaVsWifeBeating$`Use of mass media among adolescents (%), female`)
+
+massMediaVsWifeBeating <- massMediaVsWifeBeating %>%
+  mutate(
+      MediaInfluence = case_when(
+        `Use of mass media among adolescents (%), female` >= meanOfMassMediaForWomen ~ "High Impact",
+        `Use of mass media among adolescents (%), female` < meanOfMassMediaForWomen ~ "Low Impact"
+      )
+  )
+
+lowerRateOfWifeBeating <- quantile(massMediaVsWifeBeating$`Justification of wife-beating among adolescents (%), female`)[2]
+highRateOfWifeBeating <- quantile(massMediaVsWifeBeating$`Justification of wife-beating among adolescents (%), female`)[4]
+
+massMediaVsWifeBeating <- massMediaVsWifeBeating %>% 
+  mutate(
+    JustificationFromFemale = case_when(
+      `Justification of wife-beating among adolescents (%), female` <= lowerRateOfWifeBeating ~ "High Rate",
+      `Justification of wife-beating among adolescents (%), female` >= highRateOfWifeBeating ~ "Low Rate",
+      `Justification of wife-beating among adolescents (%), female` > lowerRateOfWifeBeating & 
+        `Justification of wife-beating among adolescents (%), female` < highRateOfWifeBeating ~ "Medium Rate"
+    )
+  )
+
+massMediaVsWifeBeating <-
+  massMediaVsWifeBeating[massMediaVsWifeBeating$`Countries and areas` %in% leastDevelopedCountries,]
+
+massMediaVsWifeBeatingPlot <-ggplot(as.data.frame(massMediaVsWifeBeating), aes(y = `Justification of wife-beating among adolescents (%), female`, axis1 = MediaInfluence, axis2 = JustificationFromFemale)) +
+  scale_y_continuous(labels = function(x) paste0(x/20, "%")) +
+  geom_alluvium(aes(fill = `Countries and areas`), width = 1/12) +
+  geom_stratum(width = 1/4) +
+  scale_x_discrete(limits = c("Impact of media on Females", "Rate of Justification from Females"), expand = c(.1, 0)) +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum)), size =2, min.y=100) +
+  theme_minimal() +
+  labs(fill = "Least Developed Countries") +
+  ylab("Percentage")
+
+massMediaVsWifeBeatingPlot <- massMediaVsWifeBeatingPlot + 
+  theme(legend.title = element_text(size = 10), legend.text = element_text(size = 10)) + 
+  guides(color = guide_legend(override.aes = list(size = 12)))
+
+massMediaVsWifeBeatingPlot
+```
+
+From the flow of Sankey Chart, it is expected that the higher the impact of media among female adolescents, the lower should be the justification from female in accepting the violence against them. However, data shows us that the expected trend is not the case in many countries. Therefore, UNICEF can take more initiatives to create more awareness for protection of women from violence. 
+
+# Conclusion
+
+The 5 major goal areas span a child’s life cycle, encompassing antenatal care, through infancy, childhood and adolescence, giving priority to the most disadvantaged children. Equity for children is both a stand-alone goal and a cross-cutting priority. The results areas target the key barriers that hold children and young people back, deny them the agency to shape their destinies and prevent them from accessing critical services that can save their lives and help them fulfil their potential.  
+
+From our understanding of the visualizations in least developed countries, we can say UNICEF has created a a positive impact in areas such as improving literacy rate, reducing infant mortality rate, and increasing the life expectancy by providing better sanitation and clean drinking water services. However, there are a few areas such as protecting female from violence, providing more awareness about nutrition in chlid, HIV, and seeking higher education where UNICEF can create a stronger impact. 
+
+
+# Future Scope
+
+With the help of more data, we would depict more time series charts to study more closely how UNICEF has impacted in their goals since their inception in each country. 
+
+# References
+1. https://data.unicef.org/  
+2. https://bookdown.org/yihui/rmarkdown/html-document.html  
+3. https://www.r-graph-gallery.com/  
+4. https://www.unicef.org/media/48126/file/UNICEF_Strategic_Plan_2018-2021-ENG.pdf  
+
