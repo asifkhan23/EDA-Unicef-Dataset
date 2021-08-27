@@ -1,5 +1,7 @@
 # Exploratory Data Analysis of Unicef Dataset
 
+![Unicef Logo](https://1000logos.net/wp-content/uploads/2021/03/UNICEF-logo-768x432.png)
+
 UNICEF works in over 190 countries and territories to save children’s lives, to defend their rights, and to help them fulfill their potential, from early childhood through adolescence. And we never give up.
 
 Taking the idea from UNICEF’s mission statement, we are trying to visualize the five goals of UNCIEF which they are committed towards achieving.
