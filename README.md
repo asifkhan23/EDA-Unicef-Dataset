@@ -1,4 +1,4 @@
-# EDA-Unicef-Dataset
+# Exploratory Data Analysis of Unicef Dataset
 
 UNICEF works in over 190 countries and territories to save children’s lives, to defend their rights, and to help them fulfill their potential, from early childhood through adolescence. And we never give up.
 
